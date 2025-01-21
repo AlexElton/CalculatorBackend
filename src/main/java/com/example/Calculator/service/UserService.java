@@ -13,19 +13,18 @@ public class UserService {
     this.userRepository = userRepository;
   }
 
-  public User register(User user) {
+  public void register(User user) {
     //Encrypt password
     user.setPassword(user.getPassword());
-    return userRepository.save(user);
+    userRepository.save(user);
   }
 
-  public User login(String username, String password) {
-    User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+  public void login(String username, String password) {
+    User user = userRepository.findByUsername(username).orElseThrow(ForbiddenException::new);
     if (!user.getPassword().equals(password)) {
-        throw new RuntimeException("Invalid password");
+        throw new ForbiddenException();
       }
 
-    return user;
   }
 
 }
