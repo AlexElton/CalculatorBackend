@@ -8,22 +8,23 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
   private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
 
-  public UserService(UserRepository userRepository) {
+  public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
+    this.passwordEncoder = passwordEncoder;
   }
 
   public void register(User user) {
-    //Encrypt password
-    user.setPassword(user.getPassword());
+    user.setPassword(passwordEncoder.encoder().encode(user.getPassword()));
     userRepository.save(user);
   }
 
   public String login(String username, String password) {
     User user = userRepository.findByUsername(username).orElseThrow(ForbiddenException::new);
-    if (!user.getPassword().equals(password)) {
-        throw new ForbiddenException();
-      }
+    if (!passwordEncoder.encoder().matches(password, user.getPassword())) {
+      throw new ForbiddenException();
+    }
 
     return JWTService.generateToken(username);
   }

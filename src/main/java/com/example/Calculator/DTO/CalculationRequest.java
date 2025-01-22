@@ -5,6 +5,7 @@ public class CalculationRequest {
   private double operand2;
   private String operator;
   private String username;
+  private String token;
 
 
   public double getOperand1() {
@@ -37,5 +38,13 @@ public class CalculationRequest {
 
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String getToken() {
+    return token;
+  }
+
+  public void setToken(String token) {
+    this.token = token;
   }
 }

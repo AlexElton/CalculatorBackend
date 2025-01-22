@@ -7,15 +7,19 @@ import com.example.Calculator.model.User;
 import com.example.Calculator.model.UserRepository;
 import com.example.Calculator.model.CalculationRepository;
 import com.example.Calculator.service.CalculationService;
+import com.example.Calculator.service.JWTService;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/calculate")  // Changed path for clarity
@@ -25,16 +29,33 @@ public class CalculationController {
   private final CalculationRepository calculationRepository;
   private final UserRepository userRepository;
   private static final Logger logger = LoggerFactory.getLogger(CalculationController.class);
+  private final JWTService jWTService;
 
   @Autowired
-  public CalculationController(CalculationService calculationService, UserRepository userRepository, CalculationRepository calculationRepository) {
+  public CalculationController(CalculationService calculationService, UserRepository userRepository, CalculationRepository calculationRepository,
+      JWTService jWTService) {
     this.calculationService = calculationService;
     this.userRepository = userRepository;
     this.calculationRepository = calculationRepository;
+    this.jWTService = jWTService;
   }
 
   @PostMapping("")
   public ResponseEntity<CalculationResponse> calculateGet(@RequestBody CalculationRequest request) {
+    String token = request.getToken();
+    try {
+      // Validate if the token is expired
+      if (jWTService.isTokenExpired(token)) {
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token has expired");
+      }
+    } catch (ResponseStatusException e) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(new CalculationResponse(0, "Token has expired"));
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body(new CalculationResponse(0, "Invalid token"));
+    }
+
     logger.info("Request: value1={}, value2={}, operation={}, username={}",
         request.getOperand1(), request.getOperand2(), request.getOperator(), request.getUsername());
 
@@ -52,8 +73,13 @@ public class CalculationController {
   }
 
   @GetMapping("/history")
-  public ResponseEntity<List<CalculationResponse>> getCalculationHistory(@RequestParam String username) {
+  public ResponseEntity<List<CalculationResponse>> getCalculationHistory(@RequestParam String token) {
     try {
+      // Validate token expiration
+      if (jWTService.isTokenExpired(token)) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.emptyList());
+      }
+      String username = jWTService.extractUsername(token);
       User user = userRepository.findByUsername(username)
           .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
