@@ -19,12 +19,13 @@ public class UserService {
     userRepository.save(user);
   }
 
-  public void login(String username, String password) {
+  public String login(String username, String password) {
     User user = userRepository.findByUsername(username).orElseThrow(ForbiddenException::new);
     if (!user.getPassword().equals(password)) {
         throw new ForbiddenException();
       }
 
+    return JWTService.generateToken(username);
   }
 
 }

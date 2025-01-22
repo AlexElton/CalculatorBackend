@@ -4,6 +4,8 @@ import com.example.Calculator.DTO.DetailResponse;
 import com.example.Calculator.model.User;
 import com.example.Calculator.model.UserRepository;
 import com.example.Calculator.service.UserService;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -24,6 +26,7 @@ public class UserController {
   public UserController(UserRepository userRepository, UserService userService) {
     this.userRepository = userRepository;
     this.userService = userService;
+
   }
 
   @PostMapping("/register")
@@ -33,8 +36,10 @@ public class UserController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<DetailResponse> login(@RequestBody User user) {
-    userService.login(user.getUsername(), user.getPassword());
-    return ResponseEntity.ok(new DetailResponse("User logged in", user.getUsername()));
+  public ResponseEntity<Map<String, String>> login(@RequestBody User user) {
+    String token = userService.login(user.getUsername(), user.getPassword());
+    Map<String, String> response = new HashMap<>();
+    response.put("token", token);
+    return ResponseEntity.ok(response);
   }
 }
